@@ -83,6 +83,7 @@ export default function DomainSearch() {
     let extras = [];
 
     try {
+      // === 1️⃣ Alternativas con otras extensiones (mismo nombre)
       const resultadosBasicos = await Promise.all(
         extensionesBasicas.map(async (ext) => {
           const dom = `${base}${ext}`;
@@ -97,6 +98,7 @@ export default function DomainSearch() {
       );
       basicas = resultadosBasicos.filter(Boolean);
 
+      // === 2️⃣ Alternativas con palabras, misma extensión que el cliente
       const variaciones = [
         `${base}peru`,
         `${base}digital`,
@@ -177,6 +179,7 @@ export default function DomainSearch() {
       <div className="max-w-2xl w-full bg-white/90 backdrop-blur-xl shadow-2xl rounded-2xl p-6 md:p-8 flex flex-col gap-6 border border-gray-100 relative overflow-hidden">
         <FaGlobeAmericas className="absolute top-6 right-6 text-blue-100 text-5xl md:text-6xl rotate-[15deg]" />
 
+        {/* === CABECERA === */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 md:gap-3 mb-3">
             <FaRocket className="text-blue-600 text-2xl md:text-3xl" />
@@ -189,6 +192,7 @@ export default function DomainSearch() {
           </p>
         </div>
 
+        {/* === BUSCADOR === */}
         <div className="flex flex-col sm:flex-row gap-3 mt-2">
           <div className="flex-1 relative">
             <FaSearch className="absolute left-3 top-3.5 text-gray-400 text-lg" />
@@ -220,6 +224,7 @@ export default function DomainSearch() {
           </button>
         </div>
 
+        {/* === ERROR === */}
         {error && (
           <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg mt-2">
             <FaTimesCircle />
@@ -227,6 +232,7 @@ export default function DomainSearch() {
           </div>
         )}
 
+        {/* === RESULTADOS === */}
         {info && (
           <div className="mt-3 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-inner">
             <div className="text-center">
@@ -238,6 +244,7 @@ export default function DomainSearch() {
                   </p>
                   <p className="text-gray-600 font-medium mt-1">¡Hazlo tuyo ahora!</p>
 
+                  {/* === BOTONES === */}
                   <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6 flex-wrap">
                     <a
                       href={`https://wa.me/51969956846?text=Hola,%20quiero%20solicitar%20el%20dominio%20${encodeURIComponent(
@@ -267,6 +274,7 @@ export default function DomainSearch() {
                     Dominio ocupado
                   </p>
 
+                  {/* === ALTERNATIVAS === */}
                   <div className="mt-6">
                     <h3 className="font-semibold text-gray-700 mb-2">
                       Tenemos estas opciones disponibles:
@@ -296,6 +304,7 @@ export default function DomainSearch() {
                     )}
                   </div>
 
+                  {/* === BOTÓN VER MÁS === */}
                   {!showExtra && alternativasExtra.length > 0 && (
                     <button
                       onClick={() => setShowExtra(true)}
@@ -305,6 +314,7 @@ export default function DomainSearch() {
                     </button>
                   )}
 
+                  {/* === ALTERNATIVAS CON PALABRAS === */}
                   {showExtra && alternativasExtra.length > 0 && (
                     <div className="mt-6">
                       <h3 className="font-semibold text-gray-700 mb-2">
@@ -324,12 +334,13 @@ export default function DomainSearch() {
                     </div>
                   )}
 
+                  {/* === BOTÓN DE ASESORÍA DIRECTA === */}
                   <div className="mt-8 text-center">
                     <p className="text-gray-700 mb-3 font-medium">
                       Contáctanos si deseas una asesoría directa:
                     </p>
                     <a
-                      href="https://wa.me/51969956846?text=Hola,%20deseo%20una%20asesor%C3%ADa%20sobre%20dominios"
+                      href="https://wa.me/51969956846?text=Hola,%20deseo%20una%20%20asesor%C3%ADa%20sobre%20dominios"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition shadow-md hover:scale-[1.04] mx-auto"
@@ -338,6 +349,19 @@ export default function DomainSearch() {
                       Contactar por WhatsApp
                     </a>
                   </div>
+
+                  {/* === WHOIS (de quién es el dominio) === */}
+                  {info.whois && (
+                    <details className="mt-8 bg-white rounded-lg p-4 text-left border">
+                      <summary className="cursor-pointer font-semibold text-gray-700 flex items-center gap-2">
+                        <FaGlobeAmericas className="text-blue-500" />
+                        <span>Ver de quién es el dominio</span>
+                      </summary>
+                      <pre className="text-xs text-gray-700 mt-3 overflow-x-auto whitespace-pre-wrap bg-gray-50 p-3 rounded border">
+                        {info.whois}
+                      </pre>
+                    </details>
+                  )}
                 </>
               )}
             </div>
@@ -345,6 +369,7 @@ export default function DomainSearch() {
         )}
       </div>
 
+      {/* === FORMULARIO === */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-fade-in border border-gray-200">
