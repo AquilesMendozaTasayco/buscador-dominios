@@ -129,7 +129,6 @@ export default function DomainSearch() {
     }
   };
 
-  // === Manejo del formulario ===
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -324,8 +323,8 @@ export default function DomainSearch() {
                 </div>
               )}
 
-              {/* WHOIS */}
-              {info.whois && (
+              {/* WHOIS solo si NO está disponible */}
+              {info.status !== "Disponible" && info.whois && (
                 <details className="mt-6 bg-white rounded-lg p-4 text-left border">
                   <summary className="cursor-pointer font-semibold text-gray-700 flex items-center gap-2">
                     <FaGlobeAmericas className="text-blue-500" />
