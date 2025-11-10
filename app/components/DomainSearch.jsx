@@ -14,6 +14,7 @@ import {
   FaLink,
   FaSpinner,
   FaInfoCircle,
+  FaChevronDown,
 } from "react-icons/fa";
 import { HiMail, HiPhone, HiUser } from "react-icons/hi";
 
@@ -29,14 +30,19 @@ export default function DomainSearch() {
     email: "",
     telefono: "",
   });
-  const [alternativas, setAlternativas] = useState([]);
+
+  const [alternativasBasicas, setAlternativasBasicas] = useState([]);
+  const [alternativasExtra, setAlternativasExtra] = useState([]);
   const [checkingAlternativas, setCheckingAlternativas] = useState(false);
+  const [showExtra, setShowExtra] = useState(false);
 
   const handleSearch = async (customDomain) => {
     const domainToSearch = (customDomain || domain).trim();
     setError("");
     setInfo(null);
-    setAlternativas([]);
+    setAlternativasBasicas([]);
+    setAlternativasExtra([]);
+    setShowExtra(false);
 
     if (!domainToSearch) {
       setError("Por favor ingresa un dominio válido (ej: ejemplo.com)");
@@ -56,7 +62,7 @@ export default function DomainSearch() {
       if (data.status !== "Disponible") {
         buscarAlternativas(domainToSearch);
       }
-    } catch (err) {
+    } catch {
       setError("No se pudo consultar el dominio");
     } finally {
       setLoading(false);
@@ -65,11 +71,16 @@ export default function DomainSearch() {
 
   const buscarAlternativas = async (dominioBase) => {
     setCheckingAlternativas(true);
-    setAlternativas([]);
+    setAlternativasBasicas([]);
+    setAlternativasExtra([]);
 
-    const base = dominioBase.split(".")[0].toLowerCase();
+    const partes = dominioBase.split(".");
+    const base = partes[0].toLowerCase();
+    const extensionCliente = partes[1] ? `.${partes[1].toLowerCase()}` : ".com";
     const extensionesBasicas = [".com", ".net", ".org", ".info", ".pe"];
-    let disponibles = [];
+
+    let basicas = [];
+    let extras = [];
 
     try {
       const resultadosBasicos = await Promise.all(
@@ -84,44 +95,37 @@ export default function DomainSearch() {
           }
         })
       );
+      basicas = resultadosBasicos.filter(Boolean);
 
-      disponibles = resultadosBasicos.filter(Boolean);
+      const variaciones = [
+        `${base}peru`,
+        `${base}digital`,
+        `${base}online`,
+        `${base}group`,
+        `${base}web`,
+        `${base}store`,
+        `get${base}`,
+        `${base}360`,
+        `${base}brand`,
+        `${base}company`,
+      ];
 
-      if (disponibles.length === 0) {
-        const variaciones = [
-          `${base}peru`,
-          `${base}digital`,
-          `${base}online`,
-          `${base}group`,
-          `${base}web`,
-          `${base}store`,
-          `get${base}`,
-          `${base}360`,
-          `${base}brand`,
-          `${base}company`,
-        ];
+      const resultadosExtra = await Promise.all(
+        variaciones.map(async (nombre) => {
+          const dom = `${nombre}${extensionCliente}`;
+          try {
+            const res = await fetch(`/api/check-domain?domain=${encodeURIComponent(dom)}`);
+            const data = await res.json();
+            return res.ok && data.status === "Disponible" ? dom : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      extras = resultadosExtra.filter(Boolean);
 
-        const combinaciones = [];
-        variaciones.forEach((nombre) => {
-          extensionesBasicas.forEach((ext) => combinaciones.push(`${nombre}${ext}`));
-        });
-
-        const resultadosExtra = await Promise.all(
-          combinaciones.map(async (dom) => {
-            try {
-              const res = await fetch(`/api/check-domain?domain=${encodeURIComponent(dom)}`);
-              const data = await res.json();
-              return res.ok && data.status === "Disponible" ? dom : null;
-            } catch {
-              return null;
-            }
-          })
-        );
-
-        disponibles = resultadosExtra.filter(Boolean);
-      }
-
-      setAlternativas(disponibles.slice(0, 10));
+      setAlternativasBasicas(basicas.slice(0, 10));
+      setAlternativasExtra(extras.slice(0, 10));
     } catch (error) {
       console.error("Error verificando alternativas:", error);
     } finally {
@@ -226,114 +230,115 @@ export default function DomainSearch() {
         {info && (
           <div className="mt-3 p-6 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-inner">
             <div className="text-center">
-              <div
-                className={`flex flex-col items-center justify-center mb-3 ${
-                  info.status === "Disponible" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {info.status === "Disponible" ? (
-                  <>
-                    <FaCheckCircle className="text-4xl mb-2 animate-bounce" />
-                    <p className="text-xl font-bold text-green-700">
-                      ¡Felicidades! Tu dominio está disponible.
-                    </p>
-                    <p className="text-gray-600 font-medium mt-1">
-                      ¡Hazlo tuyo ahora!
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <FaTimes className="text-3xl mb-1" />
-                    <p className="text-lg md:text-xl font-semibold">
-                      Dominio ocupado
-                    </p>
-                  </>
-                )}
-              </div>
+              {info.status === "Disponible" ? (
+                <>
+                  <FaCheckCircle className="text-4xl mb-2 animate-bounce text-green-600 mx-auto" />
+                  <p className="text-xl font-bold text-green-700">
+                    ¡Felicidades! Tu dominio está disponible.
+                  </p>
+                  <p className="text-gray-600 font-medium mt-1">¡Hazlo tuyo ahora!</p>
 
-              <p className="text-gray-600 font-medium text-sm md:text-base">
-                {info.domain}
-              </p>
+                  <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6 flex-wrap">
+                    <a
+                      href={`https://wa.me/51969956846?text=Hola,%20quiero%20solicitar%20el%20dominio%20${encodeURIComponent(
+                        info.domain
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition shadow-md hover:scale-[1.04]"
+                    >
+                      <FaWhatsapp size={20} />
+                      Solicitar por WhatsApp
+                    </a>
 
-              {info.status === "Disponible" && (
-                <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6 flex-wrap">
-                  <a
-                    href={`https://wa.me/51969956846?text=Hola,%20quiero%20solicitar%20el%20dominio%20${encodeURIComponent(
-                      info.domain
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition shadow-md hover:scale-[1.04]"
-                  >
-                    <FaWhatsapp size={20} />
-                    Solicitar por WhatsApp
-                  </a>
-
-                  <button
-                    onClick={() => setShowForm(true)}
-                    className="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md hover:scale-[1.04]"
-                  >
-                    <FaEnvelope size={18} />
-                    Solicitar por formulario
-                  </button>
-                </div>
-              )}
-
-              {info.status !== "Disponible" && (
-                <div className="mt-6">
-                  <div className="flex items-center justify-center gap-2 mb-2 text-blue-700">
-                    <FaInfoCircle className="text-blue-500" />
-                    <h3 className="font-semibold text-gray-700">
-                      Otras opciones disponibles:
-                    </h3>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md hover:scale-[1.04]"
+                    >
+                      <FaEnvelope size={18} />
+                      Solicitar por formulario
+                    </button>
                   </div>
+                </>
+              ) : (
+                <>
+                  <FaTimes className="text-3xl text-red-600 mb-1 mx-auto" />
+                  <p className="text-lg md:text-xl font-semibold text-red-600">
+                    Dominio ocupado
+                  </p>
 
-                  {checkingAlternativas ? (
-                    <div className="flex justify-center items-center gap-2 text-gray-500 text-sm">
-                      <FaSpinner className="animate-spin" />
-                      <span>Buscando alternativas...</span>
-                    </div>
-                  ) : alternativas.length > 0 ? (
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {alternativas.map((alt, i) => {
-                        const colorClass = alt.endsWith(".pe")
-                          ? "bg-green-50 text-green-700 border-green-100"
-                          : alt.endsWith(".com")
-                          ? "bg-blue-50 text-blue-700 border-blue-100"
-                          : alt.endsWith(".net")
-                          ? "bg-gray-100 text-gray-700 border-gray-200"
-                          : "bg-indigo-50 text-indigo-700 border-indigo-100";
+                  <div className="mt-6">
+                    <h3 className="font-semibold text-gray-700 mb-2">
+                      Tenemos estas opciones disponibles:
+                    </h3>
 
-                        return (
+                    {checkingAlternativas ? (
+                      <div className="flex justify-center items-center gap-2 text-gray-500 text-sm">
+                        <FaSpinner className="animate-spin" />
+                        <span>Buscando alternativas...</span>
+                      </div>
+                    ) : alternativasBasicas.length > 0 ? (
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {alternativasBasicas.map((alt, i) => (
                           <span
                             key={i}
                             onClick={() => handleSearch(alt)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium border hover:scale-[1.03] cursor-pointer flex items-center gap-2 transition ${colorClass}`}
+                            className="px-4 py-2 rounded-lg text-sm font-medium border bg-blue-50 text-blue-700 border-blue-100 hover:scale-[1.03] cursor-pointer flex items-center gap-2 transition"
                           >
                             <FaLink className="text-current" /> {alt}
                           </span>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">
-                      No hay alternativas disponibles por ahora.
-                    </p>
-                  )}
-                </div>
-              )}
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">
+                        No hay alternativas con otras extensiones.
+                      </p>
+                    )}
+                  </div>
 
-              {/* WHOIS solo si NO está disponible */}
-              {info.status !== "Disponible" && info.whois && (
-                <details className="mt-6 bg-white rounded-lg p-4 text-left border">
-                  <summary className="cursor-pointer font-semibold text-gray-700 flex items-center gap-2">
-                    <FaGlobeAmericas className="text-blue-500" />
-                    <span>Ver de quién es el dominio</span>
-                  </summary>
-                  <pre className="text-xs text-gray-700 mt-3 overflow-x-auto whitespace-pre-wrap bg-gray-50 p-3 rounded border">
-                    {info.whois}
-                  </pre>
-                </details>
+                  {!showExtra && alternativasExtra.length > 0 && (
+                    <button
+                      onClick={() => setShowExtra(true)}
+                      className="mt-6 text-blue-600 font-semibold flex items-center gap-2 mx-auto hover:underline"
+                    >
+                      Ver más alternativas <FaChevronDown className="text-sm" />
+                    </button>
+                  )}
+
+                  {showExtra && alternativasExtra.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="font-semibold text-gray-700 mb-2">
+                        Tenemos estas alternativas con una palabra adicional que creemos que puede funcionar:
+                      </h3>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {alternativasExtra.map((alt, i) => (
+                          <span
+                            key={i}
+                            onClick={() => handleSearch(alt)}
+                            className="px-4 py-2 rounded-lg text-sm font-medium border bg-indigo-50 text-indigo-700 border-indigo-100 hover:scale-[1.03] cursor-pointer flex items-center gap-2 transition"
+                          >
+                            <FaLink className="text-current" /> {alt}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-8 text-center">
+                    <p className="text-gray-700 mb-3 font-medium">
+                      Contáctanos si deseas una asesoría directa:
+                    </p>
+                    <a
+                      href="https://wa.me/51969956846?text=Hola,%20deseo%20una%20asesor%C3%ADa%20sobre%20dominios"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition shadow-md hover:scale-[1.04] mx-auto"
+                    >
+                      <FaWhatsapp size={20} />
+                      Contactar por WhatsApp
+                    </a>
+                  </div>
+                </>
               )}
             </div>
           </div>
